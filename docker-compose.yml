@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  # MongoDB with replica set for transaction support
+  mongodb:
+    image: mongo:7.0
+    container_name: soundforge-mongodb
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: |
+        test $$(mongosh --quiet --eval "try { rs.status().ok } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}).ok }") -eq 1
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
+    networks:
+      - soundforge-network
+
+  # Redis for BullMQ queues, locks & distributed rate limiting
+  redis:
+    image: redis:7.2-alpine
+    container_name: soundforge-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soundforge-network
+
+  # MinIO S3-compatible object storage for audio files
+  minio:
+    image: minio/minio:RELEASE.2024-03-05T04-48-44Z
+    container_name: soundforge-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soundforge-network
+
+  # MinIO Bucket Auto-creator
+  minio-init:
+    image: minio/mc:RELEASE.2024-03-03T17-50-39Z
+    container_name: soundforge-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb --ignore-existing myminio/soundforge-audio;
+      /usr/bin/mc anonymous set download myminio/soundforge-audio;
+      exit 0;
+      "
+    networks:
+      - soundforge-network
+
+  # SoundForge Backend API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: soundforge-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://mongodb:27017/soundforge?replicaSet=rs0&directConnection=true
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: soundforge-audio
+      MINIO_PUBLIC_URL: http://localhost:9000
+      JWT_ACCESS_SECRET: soundforge_super_secure_access_secret_change_in_production_32chars
+      JWT_REFRESH_SECRET: soundforge_super_secure_refresh_secret_change_in_production_32chars
+      MUSIC_PROVIDER: mock
+      APP_BASE_URL: http://localhost:5173
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - soundforge-network
+
+  # SoundForge Background Worker for Generation Jobs & Webhook Deliveries
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: soundforge-worker
+    restart: unless-stopped
+    command: ["npm", "run", "start:worker"]
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongodb:27017/soundforge?replicaSet=rs0&directConnection=true
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_NAME: soundforge-audio
+      MINIO_PUBLIC_URL: http://localhost:9000
+      MUSIC_PROVIDER: mock
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - soundforge-network
+
+  # SoundForge Frontend Web Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: soundforge-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - soundforge-network
+
+volumes:
+  mongo_data:
+  redis_data:
+  minio_data:
+
+networks:
+  soundforge-network:
+    driver: bridge
