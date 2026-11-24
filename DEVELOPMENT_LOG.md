@@ -3,7 +3,6 @@
 ## Milestone 1: Monorepo Setup & Infrastructure Planning
 - **Date:** 2026-11-24
 - **Feature Completed:** Repository initialization, monorepo workspaces, task tracking, .gitignore, and .env.example.
-- **Files Changed:** `.gitignore`, `package.json`, `.env.example`, `TASKS.md`, `DEVELOPMENT_LOG.md`.
 - **Commit:** `c21fbe8 chore: initialize SoundForge MERN monorepo`
 
 ## Milestone 2: Development Infrastructure
@@ -39,16 +38,10 @@
 
 ## Milestone 8: Frontend Developer Dashboard & Landing Page
 - **Date:** 2026-11-24
-- **Feature Completed:**
-  - Modern dark-navy Stripe/Linear style UI with Tailwind CSS.
-  - Landing page with interactive hero, feature showcase, live code preview (cURL/TS/Python), and pricing plans.
-  - Authentication: Sign up, Login, Email Verification, Forgot/Reset Password.
-  - Dashboard Overview: Telemetry cards, Recharts usage area chart, recent generations with audio player.
-  - API Keys Management: Live/test modes, one-time reveal modal, copyable prefix, rotation with 24h overlap, instant revocation.
-  - Generation Studio: Prompt composer, preset chips, duration & license selector with real-time credit cost formula preview, cancellation, download.
-  - Usage & Billing: Allowance breakdown, per-key usage table, daily chart, plan switcher, overage toggle.
-  - Webhooks: Endpoint management, secret reveal modal, delivery log table with retry action.
-  - Interactive Documentation & Quickstart with copy-to-clipboard cURL examples.
-  - Account & Team Settings with role-based member management.
-- **Tests Executed:** TypeScript build (`tsc && vite build`) and Vitest frontend tests.
-- **Test Results:** Clean build in 11.38s, 2/2 tests passed.
+- **Feature Completed:** React 18 dashboard, Landing page with code tabs, Auth flows, Studio with audio player, API Keys, Usage telemetry, Webhook manager, and Docs.
+- **Commit:** `9b5368a feat(dashboard): implement developer dashboard and public landing page`
+
+## Milestone 9: Architecture Documentation & Quickstart
+- **Date:** 2026-11-24
+- **Feature Completed:** Comprehensive `README.md`, architectural decisions in `DECISIONS.md`, AI tooling and correction log in `AI_USAGE.md`, threat model and security audit in `SECURITY.md`, and 5-minute developer walkthrough in `QUICKSTART.md`.
+- **Tests Executed:** Full backend and frontend build validations.
