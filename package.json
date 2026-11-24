@@ -1,0 +1,32 @@
+{
+  "name": "soundforge-platform",
+  "version": "1.0.0",
+  "description": "SoundForge - Enterprise Developer API Platform for AI Music Generation",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:worker": "npm run dev:worker --workspace=backend",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
+    "test": "npm run test:backend",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [
+    "soundforge",
+    "ai-music",
+    "developer-api",
+    "mern",
+    "bullmq",
+    "redis",
+    "minio"
+  ],
+  "author": "AbhinavY0318",
+  "license": "MIT"
+}
