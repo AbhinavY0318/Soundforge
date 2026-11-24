@@ -1,0 +1,548 @@
+openapi: 3.1.0
+info:
+  title: SoundForge Developer API
+  version: 1.0.0
+  description: |
+    SoundForge is an enterprise-grade AI Music Generation developer platform.
+    
+    ### Authentication
+    Authenticate API requests by including your secret API key in the `Authorization` header:
+    ```http
+    Authorization: Bearer sf_live_...
+    ```
+    Or alternatively via the `X-API-Key` header:
+    ```http
+    X-API-Key: sf_live_...
+    ```
+    
+    API keys exist in two modes:
+    - **Test mode**: `sf_test_...` (Safe testing in Sandbox without consuming paid credits)
+    - **Live mode**: `sf_live_...` (Production music generation with real audio synthesis)
+    
+    ### Idempotency
+    The `POST /v1/generations` endpoint supports idempotency via the `Idempotency-Key` header.
+    Sending duplicate requests with the same key and same body returns the original generation result without duplicate billing.
+    
+    ### Webhook Signatures
+    Webhook payloads are signed using HMAC-SHA256 with header:
+    ```http
+    SoundForge-Signature: t=1700000000,v1=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+    ```
+servers:
+  - url: http://localhost:4000
+    description: Local development server
+  - url: https://api.soundforge.ai
+    description: Production API
+
+paths:
+  /v1/generations:
+    post:
+      summary: Create a music generation job
+      description: |
+        Atomically reserves credits and parallel concurrency slots, queues the generation job in BullMQ,
+        and returns the generation record with status `queued`.
+      operationId: createGeneration
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          description: Unique client idempotency key to prevent duplicate billing
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGenerationRequest'
+      responses:
+        '201':
+          description: Generation job successfully queued
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/PlanValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      summary: List music generations
+      description: Returns a paginated list of generations for the authenticated account.
+      operationId: listGenerations
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [queued, running, succeeded, failed, canceled]
+        - in: query
+          name: license
+          schema:
+            type: string
+            enum: [royalty_free, sync, full_ownership]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of generations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/generations/{id}:
+    get:
+      summary: Retrieve a generation
+      description: Retrieves generation details. Polling running jobs is free and does not consume concurrency slots.
+      operationId: getGeneration
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Generation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/generations/{id}/cancel:
+    post:
+      summary: Cancel a generation job
+      description: Cancels a queued or running generation and releases reserved credits and concurrency slots.
+      operationId: cancelGeneration
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canceled generation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Generation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/usage:
+    get:
+      summary: Retrieve usage and credits
+      description: Returns current monthly credit allowance, consumed credits, active concurrency jobs, and plan limits.
+      operationId: getUsage
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Usage details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+
+  /v1/webhook_endpoints:
+    post:
+      summary: Create a webhook endpoint
+      description: Registers an HTTP endpoint with SSRF validation and returns the signing secret once.
+      operationId: createWebhookEndpoint
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookEndpointRequest'
+      responses:
+        '201':
+          description: Webhook endpoint created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpointWithSecret'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      summary: List webhook endpoints
+      operationId: listWebhookEndpoints
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of endpoints
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                    example: list
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookEndpoint'
+
+  /v1/webhook_endpoints/{id}:
+    delete:
+      summary: Delete a webhook endpoint
+      operationId: deleteWebhookEndpoint
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  deleted:
+                    type: boolean
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    CreateGenerationRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          example: Upbeat cinematic electronic synthwave with lush analog arpeggios
+          maxLength: 1000
+        duration:
+          type: integer
+          default: 60
+          minimum: 5
+          maximum: 600
+          description: Duration in seconds. Every 60s started consumes 1 duration unit.
+        license:
+          type: string
+          enum: [royalty_free, sync, full_ownership]
+          default: royalty_free
+          description: |
+            Credit costs per 60s unit:
+            - `royalty_free`: 1 credit
+            - `sync`: 6 credits
+            - `full_ownership`: 14 credits
+        instrumental:
+          type: boolean
+          default: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    Generation:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 67bb6c4839cf9e1039824bf2
+        object:
+          type: string
+          example: generation
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, canceled]
+        prompt:
+          type: string
+        duration_sec:
+          type: integer
+        duration_units:
+          type: integer
+        license:
+          type: string
+        instrumental:
+          type: boolean
+        credits_reserved:
+          type: integer
+        credits_charged:
+          type: integer
+        audio_url:
+          type: string
+          nullable: true
+          format: uri
+        provider:
+          type: string
+        model:
+          type: string
+        progress:
+          type: integer
+        error:
+          type: object
+          nullable: true
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        queued_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    GenerationList:
+      type: object
+      properties:
+        object:
+          type: string
+          example: list
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Generation'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    UsageSummary:
+      type: object
+      properties:
+        object:
+          type: string
+          example: usage
+        account_id:
+          type: string
+        plan:
+          type: object
+        credits:
+          type: object
+          properties:
+            monthly_allowance:
+              type: integer
+            credits_used:
+              type: integer
+            credits_reserved:
+              type: integer
+            total_consumed:
+              type: integer
+            credits_remaining:
+              type: integer
+            overage_used:
+              type: integer
+            overage_enabled:
+              type: boolean
+        concurrency:
+          type: object
+          properties:
+            active_jobs:
+              type: integer
+            parallel_limit:
+              type: integer
+            slots_available:
+              type: integer
+
+    CreateWebhookEndpointRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          example: https://my-app.com/api/soundforge-webhook
+        description:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+            enum: [generation.succeeded, generation.failed]
+
+    WebhookEndpoint:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          example: webhook_endpoint
+        url:
+          type: string
+        description:
+          type: string
+          nullable: true
+        events:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    WebhookEndpointWithSecret:
+      allOf:
+        - $ref: '#/components/schemas/WebhookEndpoint'
+        - type: object
+          properties:
+            signing_secret:
+              type: string
+              example: whsec_4a7139fd110c4f828bb3
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - type
+            - code
+            - message
+          properties:
+            type:
+              type: string
+              enum:
+                - invalid_request_error
+                - authentication_error
+                - permission_error
+                - not_found_error
+                - idempotency_conflict
+                - plan_validation_error
+                - rate_limit_error
+                - provider_error
+                - api_error
+            code:
+              type: string
+              example: parallel_limit_reached
+            message:
+              type: string
+              example: Your account has reached its parallel generation limit.
+            request_id:
+              type: string
+              example: req_8849c7fe12
+            param:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Permission or plan access restriction
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    IdempotencyConflict:
+      description: Reused idempotency key with different payload or concurrent in-flight conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PlanValidationError:
+      description: Plan constraint violated (e.g. unlicensed tier requested)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimitExceeded:
+      description: Rate limit or parallel generation concurrency limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
