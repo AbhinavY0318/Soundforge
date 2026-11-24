@@ -7,6 +7,7 @@ import {
   RotateCw,
   Trash2,
   ShieldAlert,
+  Clock,
 } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { Badge } from '../../components/Badge.js';
@@ -24,6 +25,7 @@ export const ApiKeysPage: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
   const [keyName, setKeyName] = useState<string>('');
   const [keyMode, setKeyMode] = useState<ApiKeyMode>('test');
+  const [scopes, setScopes] = useState<string[]>(['generations:write', 'generations:read']);
   const [createLoading, setCreateLoading] = useState<boolean>(false);
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
 
@@ -61,7 +63,7 @@ export const ApiKeysPage: React.FC = () => {
       const res = await api.post('/api/v1/api-keys', {
         name: keyName,
         mode: keyMode,
-        scopes: ['generations:write', 'generations:read'],
+        scopes,
       });
       setCreatedSecret(res.data.secret);
       await fetchKeys();
@@ -119,20 +121,21 @@ export const ApiKeysPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">API Key Management</h1>
-          <p className="text-xs text-gray-400 mt-1">
-            Authenticate developer requests to <code className="text-indigo-400 font-mono">/v1/generations</code>
+          <h1 className="text-2xl font-bold tracking-tight text-white">API Key Management</h1>
+          <p className="text-xs text-text-secondary mt-1">
+            Authenticate developer requests to <code className="text-accent-violet font-mono">/v1/generations</code>
           </p>
         </div>
 
         <button
+          type="button"
           onClick={() => {
             setKeyName('');
             setKeyMode(plan?.allowTestKeysOnly ? 'test' : 'live');
             setCreatedSecret(null);
             setIsCreateOpen(true);
           }}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow-lg shadow-indigo-500/25 flex items-center gap-2"
+          className="btn-primary-gradient px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           <span>Generate New Key</span>
@@ -140,15 +143,16 @@ export const ApiKeysPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-white/5 pb-3">
         {(['all', 'live', 'test'] as const).map((tab) => (
           <button
             key={tab}
+            type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-colors ${
               activeTab === tab
-                ? 'bg-gray-800 text-indigo-400 border border-gray-700'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-accent-violet/15 text-accent-violet border border-accent-violet/30'
+                : 'text-text-muted hover:text-white'
             }`}
           >
             {tab} Keys
@@ -157,10 +161,10 @@ export const ApiKeysPage: React.FC = () => {
       </div>
 
       {/* Keys Table */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden shadow-xl">
+      <div className="surface-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0B0F19]/60 text-gray-400 font-medium border-b border-gray-800">
+            <thead className="bg-[#08090D]/60 text-text-muted font-medium border-b border-white/5">
               <tr>
                 <th className="py-3 px-6">Name</th>
                 <th className="py-3 px-4">Key Prefix</th>
@@ -172,49 +176,53 @@ export const ApiKeysPage: React.FC = () => {
                 <th className="py-3 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/60 text-gray-300">
+            <tbody className="divide-y divide-white/5 text-text-secondary font-mono">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-500">
-                    Loading API keys...
+                  <td colSpan={8} className="py-12 text-center text-text-muted font-sans">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 border-2 border-accent-violet/30 border-t-accent-violet rounded-full animate-spin" />
+                      <span>Loading keys...</span>
+                    </div>
                   </td>
                 </tr>
               ) : filteredKeys.length > 0 ? (
                 filteredKeys.map((k) => (
-                  <tr key={k.id} className="hover:bg-gray-800/30 transition">
-                    <td className="py-3.5 px-6 font-semibold text-gray-200">{k.name}</td>
-                    <td className="py-3.5 px-4 font-mono text-gray-300 flex items-center gap-2">
+                  <tr key={k.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3.5 px-6 font-sans font-semibold text-white">{k.name}</td>
+                    <td className="py-3.5 px-4 text-text-primary flex items-center gap-2">
                       <span>{k.keyPrefix}</span>
                       <button
+                        type="button"
                         onClick={() => copyToClipboard(k.keyPrefix, k.id)}
-                        className="text-gray-500 hover:text-gray-300 p-1"
+                        className="text-text-muted hover:text-white p-1"
                         title="Copy Prefix"
                       >
                         {copiedKey === k.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <Check className="w-3.5 h-3.5 text-accent-emerald" />
                         ) : (
                           <Copy className="w-3.5 h-3.5" />
                         )}
                       </button>
                     </td>
-                    <td className="py-3.5 px-4">
-                      <Badge variant={k.mode === 'live' ? 'success' : 'info'}>
+                    <td className="py-3.5 px-4 font-sans">
+                      <Badge variant={k.mode === 'live' ? 'cyan' : 'warning'}>
                         {k.mode}
                       </Badge>
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 font-sans">
                       <div className="flex gap-1 flex-wrap">
                         {k.scopes.map((s) => (
                           <span
                             key={s}
-                            className="px-1.5 py-0.5 rounded bg-gray-800 text-[10px] font-mono text-gray-400"
+                            className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-mono text-text-muted"
                           >
                             {s}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 font-sans">
                       <Badge
                         variant={
                           k.status === 'active'
@@ -223,44 +231,47 @@ export const ApiKeysPage: React.FC = () => {
                             ? 'warning'
                             : 'error'
                         }
+                        dot={true}
                       >
                         {k.status}
                       </Badge>
                     </td>
-                    <td className="py-3.5 px-4 text-gray-500 font-mono">
+                    <td className="py-3.5 px-4 text-text-muted">
                       {new Date(k.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="py-3.5 px-4 text-gray-500 font-mono">
+                    <td className="py-3.5 px-4 text-text-muted">
                       {k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : 'Never'}
                     </td>
                     <td className="py-3.5 px-6 text-right">
                       {k.status !== 'revoked' ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            type="button"
                             onClick={() => setRotatingKey(k)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 transition"
-                            title="Rotate Key"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-accent-amber hover:bg-accent-amber/10 transition-colors"
+                            title="Rotate Key (24h overlap)"
                           >
                             <RotateCw className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => setRevokingKey(k)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-accent-rose hover:bg-accent-rose/10 transition-colors"
                             title="Revoke Key"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
-                        <span className="text-gray-600 text-xs">Revoked</span>
+                        <span className="text-text-muted text-xs">Revoked</span>
                       )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-500">
-                    No {activeTab} API keys created yet.
+                  <td colSpan={8} className="py-12 text-center text-text-muted font-sans">
+                    No {activeTab !== 'all' ? activeTab : ''} API keys found. Click "Generate New Key" to create one.
                   </td>
                 </tr>
               )}
@@ -276,41 +287,42 @@ export const ApiKeysPage: React.FC = () => {
           setIsCreateOpen(false);
           setCreatedSecret(null);
         }}
-        title={createdSecret ? 'Save Your API Secret Key' : 'Create New API Key'}
+        title={createdSecret ? 'API Key Created Successfully' : 'Generate New API Key'}
       >
         {createdSecret ? (
           <div className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-start gap-3 leading-relaxed">
-              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-accent-amber/10 border border-accent-amber/20 text-accent-amber text-xs flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold">Store this secret securely!</span> You will not be
-                able to view it again. If lost, you must rotate or generate a new key.
+                <span className="font-semibold block mb-0.5">Copy this key now.</span>
+                For security reasons, this secret is stored as a SHA-256 hash and will never be shown again.
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-                Secret API Key
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                Full API Key Secret
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={createdSecret}
-                  className="flex-1 bg-[#0B0F19] border border-gray-700 rounded-lg px-3.5 py-2.5 text-xs text-indigo-300 font-mono select-all focus:outline-none"
+                  className="w-full bg-[#08090D] border border-white/10 rounded-xl p-3 text-xs font-mono text-accent-cyan select-all"
                 />
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(createdSecret, 'secret')}
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                  className="btn-primary-gradient px-4 py-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 flex-shrink-0"
                 >
                   {copiedKey === 'secret' ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-300" />
+                      <Check className="w-3.5 h-3.5" />
                       <span>Copied</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-3.5 h-3.5" />
                       <span>Copy</span>
                     </>
                   )}
@@ -318,77 +330,117 @@ export const ApiKeysPage: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setIsCreateOpen(false);
-                setCreatedSecret(null);
-              }}
-              className="w-full mt-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg transition"
-            >
-              I Have Saved My Secret
-            </button>
+            <div className="pt-3 border-t border-white/5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  setCreatedSecret(null);
+                }}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium transition-colors"
+              >
+                I Have Stored This Key Safely
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-                Key Label / Description
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                Key Name / Description
               </label>
               <input
                 type="text"
                 required
                 value={keyName}
                 onChange={(e) => setKeyName(e.target.value)}
-                placeholder="e.g. Production Backend Webhook Service"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition"
+                placeholder="e.g. Production iOS Client"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-                Key Mode
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                Key Environment Mode
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setKeyMode('test')}
-                  className={`p-3 rounded-lg border text-left transition ${
-                    keyMode === 'test'
-                      ? 'border-indigo-500 bg-indigo-500/10 text-white'
-                      : 'border-gray-800 bg-[#0B0F19] text-gray-400 hover:border-gray-700'
-                  }`}
+                  disabled={plan?.allowTestKeysOnly}
+                  onClick={() => setKeyMode('live')}
+                  className={`p-3 rounded-xl border text-left text-xs transition-colors ${
+                    keyMode === 'live'
+                      ? 'bg-accent-cyan/10 border-accent-cyan/40 text-white'
+                      : 'bg-[#08090D] border-white/8 text-text-muted hover:border-white/20'
+                  } ${plan?.allowTestKeysOnly ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
-                  <div className="text-xs font-bold text-gray-200">Test Mode</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">Free Sandbox generations</div>
+                  <div className="font-semibold text-accent-cyan mb-1">Live Mode (sf_live_...)</div>
+                  <div className="text-[11px] text-text-secondary">Deducts credits, generates real tracks</div>
                 </button>
 
                 <button
                   type="button"
-                  disabled={plan?.allowTestKeysOnly}
-                  onClick={() => setKeyMode('live')}
-                  className={`p-3 rounded-lg border text-left transition ${
-                    keyMode === 'live'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                      : plan?.allowTestKeysOnly
-                      ? 'opacity-40 cursor-not-allowed border-gray-800'
-                      : 'border-gray-800 bg-[#0B0F19] text-gray-400 hover:border-gray-700'
+                  onClick={() => setKeyMode('test')}
+                  className={`p-3 rounded-xl border text-left text-xs transition-colors ${
+                    keyMode === 'test'
+                      ? 'bg-accent-amber/10 border-accent-amber/40 text-white'
+                      : 'bg-[#08090D] border-white/8 text-text-muted hover:border-white/20'
                   }`}
                 >
-                  <div className="text-xs font-bold text-gray-200">Live Mode</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">
-                    {plan?.allowTestKeysOnly ? 'Requires Starter/Growth' : 'Commercial synthesis'}
-                  </div>
+                  <div className="font-semibold text-accent-amber mb-1">Test Mode (sf_test_...)</div>
+                  <div className="text-[11px] text-text-secondary">Zero cost, synthetic validation</div>
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={createLoading || !keyName}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
-            >
-              {createLoading ? 'Generating...' : 'Create Key'}
-            </button>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+                Scopes / Permissions
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={scopes.includes('generations:write')}
+                    onChange={(e) => {
+                      if (e.target.checked) setScopes([...scopes, 'generations:write']);
+                      else setScopes(scopes.filter((s) => s !== 'generations:write'));
+                    }}
+                    className="rounded bg-[#08090D] border-white/20 text-accent-violet focus:ring-0"
+                  />
+                  <span className="font-mono text-white">generations:write</span> — Create & cancel audio jobs
+                </label>
+                <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={scopes.includes('generations:read')}
+                    onChange={(e) => {
+                      if (e.target.checked) setScopes([...scopes, 'generations:read']);
+                      else setScopes(scopes.filter((s) => s !== 'generations:read'));
+                    }}
+                    className="rounded bg-[#08090D] border-white/20 text-accent-violet focus:ring-0"
+                  />
+                  <span className="font-mono text-white">generations:read</span> — Read jobs & telemetry
+                </label>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={createLoading || !keyName}
+                className="btn-primary-gradient px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-50"
+              >
+                {createLoading ? 'Generating...' : 'Generate API Key'}
+              </button>
+            </div>
           </form>
         )}
       </Modal>
@@ -397,41 +449,45 @@ export const ApiKeysPage: React.FC = () => {
       <Modal
         isOpen={!!rotatingKey}
         onClose={() => setRotatingKey(null)}
-        title="Rotate API Key Safely"
+        title="Zero-Downtime Key Rotation"
       >
         <div className="space-y-4">
-          <p className="text-xs text-gray-300 leading-relaxed">
-            Rotating creates an immediate replacement key while allowing the existing key to remain
-            functional during a safe overlap window, preventing service interruptions.
-          </p>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Overlap Window Duration
-            </label>
-            <select
-              value={overlapHours}
-              onChange={(e) => setOverlapHours(parseInt(e.target.value, 10))}
-              className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-gray-100 focus:outline-none focus:border-indigo-500"
-            >
-              <option value={24}>24 Hours (Recommended for zero-downtime CI/CD)</option>
-              <option value={48}>48 Hours (Extended migration window)</option>
-              <option value={1}>1 Hour (Quick rotation)</option>
-              <option value={0}>0 Hours (Immediate atomic replacement)</option>
-            </select>
+          <div className="p-3.5 rounded-xl bg-accent-indigo/10 border border-accent-indigo/20 text-accent-indigo text-xs flex items-start gap-2.5">
+            <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold block mb-0.5">24-Hour Overlap Window</span>
+              A new key will be generated immediately. The existing key ({rotatingKey?.keyPrefix}) will
+              remain active for 24 hours to prevent production integration downtime.
+            </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">
+              Overlap Duration (Hours)
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={72}
+              value={overlapHours}
+              onChange={(e) => setOverlapHours(parseInt(e.target.value, 10))}
+              className="w-full bg-[#08090D] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white"
+            />
+          </div>
+
+          <div className="pt-4 border-t border-white/5 flex justify-end gap-2">
             <button
+              type="button"
               onClick={() => setRotatingKey(null)}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium transition-colors"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleRotate}
               disabled={rotateLoading}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg transition"
+              className="px-4 py-2 bg-accent-amber hover:bg-accent-amber/90 text-[#08090D] font-semibold text-xs rounded-xl transition-colors"
             >
               {rotateLoading ? 'Rotating...' : 'Rotate Key Now'}
             </button>
@@ -443,36 +499,33 @@ export const ApiKeysPage: React.FC = () => {
       <Modal
         isOpen={!!revokingKey}
         onClose={() => setRevokingKey(null)}
-        title="Confirm Key Revocation"
-        maxWidth="sm"
+        title="Revoke Developer API Key"
       >
         <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+          <div className="p-3.5 rounded-xl bg-accent-rose/10 border border-accent-rose/20 text-accent-rose text-xs flex items-start gap-2.5">
+            <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold">Immediate Invalidation:</span> Any requests using prefix{' '}
-              <span className="font-mono">{revokingKey?.keyPrefix}</span> will fail with HTTP 401
-              instantly.
+              <span className="font-semibold block mb-0.5">Immediate Invalidation</span>
+              Are you sure you want to revoke <span className="font-mono">{revokingKey?.keyPrefix}</span>?
+              All future REST API requests signed with this key will fail immediately with HTTP 401.
             </div>
           </div>
 
-          <p className="text-xs text-gray-400">
-            Are you sure you want to revoke key <strong>{revokingKey?.name}</strong>?
-          </p>
-
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="pt-4 border-t border-white/5 flex justify-end gap-2">
             <button
+              type="button"
               onClick={() => setRevokingKey(null)}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium transition-colors"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleRevoke}
               disabled={revokeLoading}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition shadow-lg shadow-rose-500/25"
+              className="px-4 py-2 bg-accent-rose hover:bg-accent-rose/90 text-white font-semibold text-xs rounded-xl transition-colors"
             >
-              {revokeLoading ? 'Revoking...' : 'Revoke Immediately'}
+              {revokeLoading ? 'Revoking...' : 'Confirm Revocation'}
             </button>
           </div>
         </div>

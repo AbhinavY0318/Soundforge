@@ -3,31 +3,109 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-[#0B0F19] text-gray-100 antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  :root {
+    color-scheme: dark;
   }
 
-  code, pre {
-    font-family: 'JetBrains Mono', monospace;
+  body {
+    background-color: #08090D;
+    color: #F8FAFC;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  /* Tabular numbers for clean analytics & metrics alignment */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* Custom scrollbars */
+/* Ambient Radial Glows & Grid Backgrounds */
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.bg-radial-ambient {
+  background: radial-gradient(circle at 50% 0%, rgba(129, 140, 248, 0.12) 0%, rgba(8, 9, 13, 0) 65%);
+}
+
+.bg-radial-hero {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167, 139, 250, 0.18), rgba(8, 9, 13, 0));
+}
+
+/* Card Elevation & Border Highlights */
+.surface-card {
+  background-color: #151A27;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 14px 35px -10px rgba(0, 0, 0, 0.65), 0 0 20px -5px rgba(129, 140, 248, 0.08);
+}
+
+.surface-elevated {
+  background-color: #121622;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Buttons with Gradient Glow */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #A78BFA 0%, #818CF8 50%, #6366F1 100%);
+  color: #FFFFFF;
+  font-weight: 500;
+  box-shadow: 0 0 20px -3px rgba(167, 139, 250, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary-gradient:hover {
+  box-shadow: 0 0 28px 0px rgba(167, 139, 250, 0.55);
+  transform: translateY(-1px);
+}
+
+.btn-primary-gradient:active {
+  transform: translateY(0);
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: #08090D;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Skeleton Loading Shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
 }

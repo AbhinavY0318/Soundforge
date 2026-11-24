@@ -6,6 +6,8 @@ import {
   XCircle,
   RefreshCw,
   Coins,
+  Search,
+  Music2,
 } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { Badge } from '../../components/Badge.js';
@@ -16,17 +18,21 @@ import { useAuth } from '../../context/AuthContext.js';
 export const GenerationsPage: React.FC = () => {
   const { refreshUser } = useAuth();
 
-  const [prompt, setPrompt] = useState<string>('Futuristic cinematic cyberpunk synthwave with analog bassline and ethereal pads');
+  const [prompt, setPrompt] = useState<string>(
+    'Futuristic cinematic cyberpunk synthwave with analog bassline and ethereal pads'
+  );
   const [durationSec, setDurationSec] = useState<number>(60);
   const [license, setLicense] = useState<LicenseType>('royalty_free');
   const [instrumental, setInstrumental] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // History state
+  // History & Filters
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [historyLoading, setHistoryLoading] = useState<boolean>(true);
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Credit calculation
   const licenseCostMap: Record<LicenseType, number> = {
@@ -57,7 +63,7 @@ export const GenerationsPage: React.FC = () => {
 
   useEffect(() => {
     fetchHistory();
-    const interval = setInterval(fetchHistory, 6000);
+    const interval = setInterval(fetchHistory, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -92,42 +98,56 @@ export const GenerationsPage: React.FC = () => {
     }
   };
 
+  // Filtered generations list
+  const filteredGenerations = generations.filter((gen) => {
+    const matchesSearch =
+      !searchQuery || gen.prompt?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || gen.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-100">Music Generation Studio</h1>
-        <p className="text-xs text-gray-400 mt-1">
-          Compose custom audio with predictable credit metering, license tracking, and S3 audio persistence
+        <h1 className="text-2xl font-bold tracking-tight text-white">Music Generation Studio</h1>
+        <p className="text-xs text-text-secondary mt-1">
+          Compose custom AI audio with atomic credit metering, license tracking, and S3 audio persistence.
         </p>
       </div>
 
-      {/* Generation Form Card */}
-      <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 lg:p-8 shadow-xl relative overflow-hidden">
+      {/* Generation Studio Form Card */}
+      <div className="surface-card p-6 lg:p-8 rounded-2xl relative shadow-card">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent-violet/40 to-transparent" />
+
         <form onSubmit={handleGenerate} className="space-y-6">
-          {/* Prompt */}
+          {/* Prompt Input */}
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider flex items-center justify-between">
-              <span>Music Generation Prompt</span>
-              <span className="text-gray-500 font-mono text-[11px]">{prompt.length} / 1000</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                <Music2 className="w-3.5 h-3.5 text-accent-violet" />
+                <span>Music Generation Prompt</span>
+              </label>
+              <span className="text-[11px] font-mono text-text-muted">{prompt.length} / 1000</span>
+            </div>
+
             <textarea
               required
               rows={3}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe the genre, tempo, instruments, mood, and production characteristics..."
-              className="w-full bg-[#0B0F19] border border-gray-800 rounded-xl p-4 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition leading-relaxed resize-none"
+              className="w-full bg-[#08090D] border border-white/10 rounded-xl p-4 text-xs sm:text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors leading-relaxed resize-none"
             />
 
             {/* Prompt presets */}
-            <div className="flex flex-wrap gap-2 mt-2.5">
+            <div className="flex flex-wrap gap-2 mt-3">
               {samplePrompts.map((p, idx) => (
                 <button
                   type="button"
                   key={idx}
                   onClick={() => setPrompt(p)}
-                  className="px-2.5 py-1 rounded-lg bg-gray-800/80 hover:bg-gray-800 text-[11px] text-gray-400 hover:text-gray-200 border border-gray-700/60 transition truncate max-w-xs"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-text-muted hover:text-white border border-white/8 transition-colors truncate max-w-xs"
                 >
                   {p}
                 </button>
@@ -136,16 +156,16 @@ export const GenerationsPage: React.FC = () => {
           </div>
 
           {/* Controls Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2 border-t border-gray-800">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-white/5">
             {/* Duration Selector */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">
                 Duration (Seconds)
               </label>
               <select
                 value={durationSec}
                 onChange={(e) => setDurationSec(parseInt(e.target.value, 10))}
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-accent-violet transition-colors"
               >
                 <option value={30}>30s (1 Duration Unit)</option>
                 <option value={60}>60s (1 Duration Unit)</option>
@@ -157,60 +177,64 @@ export const GenerationsPage: React.FC = () => {
 
             {/* License Selector */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">
                 License Tier
               </label>
               <select
                 value={license}
                 onChange={(e) => setLicense(e.target.value as LicenseType)}
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-accent-violet transition-colors"
               >
-                <option value="royalty_free">Royalty-Free (1 credit/unit)</option>
-                <option value="sync">Sync License (6 credits/unit)</option>
-                <option value="full_ownership">Full Ownership (14 credits/unit)</option>
+                <option value="royalty_free">Royalty-Free (1 cr / unit)</option>
+                <option value="sync">Sync License (6 cr / unit)</option>
+                <option value="full_ownership">Full Ownership (14 cr / unit)</option>
               </select>
             </div>
 
             {/* Instrumental Toggle */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">
                 Arrangement
               </label>
               <button
                 type="button"
                 onClick={() => setInstrumental(!instrumental)}
-                className={`w-full py-2.5 px-3.5 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
+                className={`w-full py-2.5 px-3.5 rounded-xl border text-xs font-medium flex items-center justify-between transition-colors ${
                   instrumental
-                    ? 'bg-indigo-600/15 border-indigo-500/30 text-indigo-300'
-                    : 'bg-[#0B0F19] border-gray-800 text-gray-400'
+                    ? 'bg-accent-violet/10 border-accent-violet/30 text-white'
+                    : 'bg-[#08090D] border-white/10 text-text-muted'
                 }`}
               >
                 <span>Instrumental Track</span>
-                <span className={`w-2.5 h-2.5 rounded-full ${instrumental ? 'bg-indigo-500' : 'bg-gray-700'}`} />
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    instrumental ? 'bg-accent-violet animate-pulse' : 'bg-white/20'
+                  }`}
+                />
               </button>
             </div>
           </div>
 
-          {/* Pricing Preview & Submit */}
-          <div className="pt-4 border-t border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Pricing Preview & Submit Action */}
+          <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs">
-              <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center gap-1.5 font-semibold">
+              <div className="p-2 rounded-xl bg-accent-violet/10 border border-accent-violet/20 text-accent-violet flex items-center gap-1.5 font-semibold">
                 <Coins className="w-4 h-4" />
                 <span>Cost: {requiredCredits} credits</span>
               </div>
-              <span className="text-gray-500">
-                ({durationUnits} unit × {licenseCostMap[license]} cr)
+              <span className="text-text-muted text-[11px] font-mono">
+                Formula: {durationUnits} unit(s) × {licenseCostMap[license]} cr
               </span>
             </div>
 
             <button
               type="submit"
               disabled={loading || !prompt}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm rounded-lg transition shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
+              className="btn-primary-gradient px-6 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Reserving Slot & Queueing...</span>
                 </>
               ) : (
@@ -223,38 +247,75 @@ export const GenerationsPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+            <div className="p-3.5 rounded-xl bg-accent-rose/10 border border-accent-rose/20 text-accent-rose text-xs">
               {error}
             </div>
           )}
         </form>
       </div>
 
-      {/* History Table */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+      {/* Generation History Archive */}
+      <div className="surface-card overflow-hidden">
+        {/* Archive Header with Search & Filter Tabs */}
+        <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold text-gray-100">Generation Archive</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Asynchronous generation status and player</p>
+            <h3 className="text-base font-semibold text-white tracking-tight">Generation Archive</h3>
+            <p className="text-xs text-text-secondary mt-0.5">Asynchronous generation status, waveform playback, and audio export</p>
           </div>
-          <button
-            onClick={fetchHistory}
-            className="p-2 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition"
-            title="Refresh"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="relative w-48 sm:w-64">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search prompt..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#08090D] border border-white/8 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchHistory}
+              className="p-2 rounded-xl text-text-muted hover:text-white hover:bg-white/5 transition-colors"
+              title="Refresh generations"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
+        {/* Filter Tabs */}
+        <div className="px-6 py-2 border-b border-white/5 bg-[#08090D]/50 flex items-center gap-2 overflow-x-auto text-xs">
+          {['all', 'succeeded', 'running', 'queued', 'failed', 'canceled'].map((st) => (
+            <button
+              type="button"
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-2.5 py-1 rounded-lg capitalize transition-colors ${
+                statusFilter === st
+                  ? 'bg-accent-violet/20 text-accent-violet font-semibold border border-accent-violet/30'
+                  : 'text-text-muted hover:text-white'
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
+
+        {/* Audio Player Drawer when active */}
         {activeAudioUrl && (
-          <div className="p-4 bg-indigo-950/20 border-b border-indigo-500/20">
-            <AudioPlayer src={activeAudioUrl} title="Audio Player" />
+          <div className="p-4 bg-accent-violet/5 border-b border-white/5">
+            <AudioPlayer src={activeAudioUrl} title="Selected Audio Track" />
           </div>
         )}
 
+        {/* Table View */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0B0F19]/60 text-gray-400 font-medium border-b border-gray-800">
+            <thead className="bg-[#08090D]/60 text-text-muted font-medium border-b border-white/5">
               <tr>
                 <th className="py-3 px-6">Track Prompt</th>
                 <th className="py-3 px-4">Status</th>
@@ -265,17 +326,20 @@ export const GenerationsPage: React.FC = () => {
                 <th className="py-3 px-6 text-right">Playback & Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/60 text-gray-300">
+            <tbody className="divide-y divide-white/5 text-text-secondary">
               {historyLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500">
-                    Loading generations...
+                  <td colSpan={7} className="py-12 text-center text-text-muted">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 border-2 border-accent-violet/30 border-t-accent-violet rounded-full animate-spin" />
+                      <span>Loading generations archive...</span>
+                    </div>
                   </td>
                 </tr>
-              ) : generations.length > 0 ? (
-                generations.map((gen) => (
-                  <tr key={gen._id || gen.id} className="hover:bg-gray-800/30 transition">
-                    <td className="py-3.5 px-6 font-medium text-gray-200 max-w-sm truncate">
+              ) : filteredGenerations.length > 0 ? (
+                filteredGenerations.map((gen) => (
+                  <tr key={gen._id || gen.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="py-3.5 px-6 font-medium text-white max-w-sm truncate">
                       {gen.prompt}
                     </td>
                     <td className="py-3.5 px-4">
@@ -284,23 +348,27 @@ export const GenerationsPage: React.FC = () => {
                           gen.status === 'succeeded'
                             ? 'success'
                             : gen.status === 'running'
-                            ? 'info'
+                            ? 'violet'
                             : gen.status === 'queued'
-                            ? 'warning'
+                            ? 'neutral'
                             : gen.status === 'canceled'
                             ? 'neutral'
                             : 'error'
                         }
+                        dot={true}
+                        pulse={gen.status === 'running'}
                       >
                         {gen.status}
                       </Badge>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-gray-400">{gen.durationSec}s</td>
-                    <td className="py-3.5 px-4 capitalize">{gen.license?.replace('_', ' ')}</td>
-                    <td className="py-3.5 px-4 font-mono text-indigo-400 font-semibold">
+                    <td className="py-3.5 px-4 font-mono text-text-muted">{gen.durationSec}s</td>
+                    <td className="py-3.5 px-4 capitalize text-text-secondary">
+                      {gen.license?.replace('_', ' ')}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-accent-violet font-semibold">
                       {gen.creditsCharged || gen.creditsReserved} cr
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-gray-500">
+                    <td className="py-3.5 px-4 font-mono text-text-muted">
                       {gen.queuedAt ? new Date(gen.queuedAt).toLocaleTimeString() : 'Just now'}
                     </td>
                     <td className="py-3.5 px-6 text-right">
@@ -308,18 +376,19 @@ export const GenerationsPage: React.FC = () => {
                         {gen.status === 'succeeded' && gen.audioUrl && (
                           <>
                             <button
+                              type="button"
                               onClick={() => setActiveAudioUrl(gen.audioUrl!)}
-                              className="p-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/30 text-indigo-400 transition"
+                              className="p-1.5 rounded-lg bg-accent-violet/10 hover:bg-accent-violet/20 text-accent-violet transition-colors"
                               title="Play"
                             >
-                              <Play className="w-3.5 h-3.5 ml-0.5" />
+                              <Play className="w-3.5 h-3.5 ml-0.5 fill-current" />
                             </button>
                             <a
                               href={gen.audioUrl}
                               download
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition"
+                              className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/5 transition-colors"
                               title="Download"
                             >
                               <Download className="w-3.5 h-3.5" />
@@ -329,8 +398,9 @@ export const GenerationsPage: React.FC = () => {
 
                         {(gen.status === 'queued' || gen.status === 'running') && (
                           <button
+                            type="button"
                             onClick={() => handleCancel(gen._id || gen.id!)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-accent-rose hover:bg-accent-rose/10 transition-colors"
                             title="Cancel Job"
                           >
                             <XCircle className="w-3.5 h-3.5" />
@@ -342,8 +412,8 @@ export const GenerationsPage: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500">
-                    No generations found. Queue your first song above!
+                  <td colSpan={7} className="py-12 text-center text-text-muted font-sans">
+                    No generations found matching your criteria.
                   </td>
                 </tr>
               )}

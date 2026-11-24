@@ -34,26 +34,28 @@ export const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl p-8 shadow-2xl">
+    <div className="min-h-screen bg-[#08090D] flex items-center justify-center p-4 relative overflow-hidden bg-radial-ambient">
+      <div className="w-full max-w-md surface-card p-8 rounded-2xl relative shadow-card border border-white/10 z-10">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent-violet/40 to-transparent" />
+
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-accent-violet/10 border border-accent-violet/20 text-accent-violet flex items-center justify-center mx-auto mb-4">
             <Lock className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-100">Set New Password</h1>
-          <p className="text-xs text-gray-400 mt-1">Choose a strong password with at least 8 characters</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Set New Password</h1>
+          <p className="text-xs text-text-secondary mt-1">Choose a strong password with at least 8 characters</p>
         </div>
 
         {status === 'success' && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs mb-6 flex flex-col items-center gap-2">
+          <div className="p-4 rounded-xl bg-accent-emerald/10 border border-accent-emerald/20 text-accent-emerald text-xs mb-6 flex flex-col items-center gap-2">
             <CheckCircle2 className="w-6 h-6" />
             <span className="font-semibold text-sm">Password Reset Successfully!</span>
-            <span className="text-emerald-500">Redirecting to login page...</span>
+            <span className="text-[11px] text-accent-emerald/80">Redirecting to login page...</span>
           </div>
         )}
 
         {error && (
-          <div className="mb-6 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+          <div className="mb-6 p-3 rounded-xl bg-accent-rose/10 border border-accent-rose/20 text-accent-rose text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -62,69 +64,64 @@ export const ResetPasswordPage: React.FC = () => {
         {status !== 'success' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-                Reset Token
-              </label>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">Reset Token</label>
               <input
                 type="text"
                 required
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Reset Token"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-gray-100 font-mono focus:outline-none focus:border-indigo-500 transition"
+                placeholder="Paste reset token"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-                New Password
-              </label>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">New Password</label>
               <input
                 type="password"
                 required
-                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors font-mono"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-                Confirm Password
-              </label>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5">Confirm Password</label>
               <input
                 type="password"
                 required
-                minLength={8}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors font-mono"
               />
             </div>
 
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
+              className="btn-primary-gradient w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
             >
               {status === 'loading' ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Updating password...</span>
+                </>
               ) : (
                 <>
-                  <span>Update Password</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Reset Password</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
           </form>
         )}
 
-        <div className="mt-6 pt-6 border-t border-gray-800 text-center">
-          <Link to="/auth/login" className="text-xs text-indigo-400 hover:text-indigo-300 transition">
-            Back to Sign In
+        <div className="mt-6 pt-5 border-t border-white/5 text-center text-xs text-text-secondary">
+          <Link to="/auth/login" className="text-white hover:text-accent-violet font-semibold transition-colors">
+            Back to Sign in
           </Link>
         </div>
       </div>

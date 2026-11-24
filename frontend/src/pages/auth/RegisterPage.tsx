@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Waves, ArrowRight, Lock, Mail, User as UserIcon, Building2, AlertCircle } from 'lucide-react';
+import { ArrowRight, Lock, Mail, User as UserIcon, Building2, AlertCircle } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.js';
+import { SoundForgeLogo } from '../../components/SoundForgeLogo.js';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -12,11 +13,16 @@ export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [accountName, setAccountName] = useState<string>('');
+  const [agreeTerms, setAgreeTerms] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreeTerms) {
+      setError('Please accept the Terms of Service to continue.');
+      return;
+    }
     setError(null);
     setLoading(true);
 
@@ -30,7 +36,6 @@ export const RegisterPage: React.FC = () => {
 
       login(res.data.tokens, res.data.user, res.data.account);
 
-      // If a verification token was generated, redirect to verify or directly to dashboard
       if (res.data.verificationToken) {
         navigate(`/auth/verify-email?token=${res.data.verificationToken}`);
       } else {
@@ -44,115 +49,126 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen bg-[#08090D] flex items-center justify-center p-4 relative overflow-hidden bg-radial-ambient">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[300px] bg-accent-violet/10 blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md surface-card p-8 sm:p-10 rounded-2xl relative shadow-card border border-white/10 z-10">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent-violet/40 to-transparent" />
+
         <div className="flex flex-col items-center mb-8">
-          <Link to="/" className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/25">
-            <Waves className="w-7 h-7 text-white" />
+          <Link to="/" className="mb-4">
+            <SoundForgeLogo size="lg" showText={false} />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-100">Create Developer Account</h1>
-          <p className="text-xs text-gray-400 mt-1">Instant API keys with starter tier included</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Create Account</h1>
+          <p className="text-xs text-text-secondary mt-1.5">Instant API keys with starter tier included</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+          <div className="mb-6 p-3 rounded-xl bg-accent-rose/10 border border-accent-rose/20 text-accent-rose text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Full Name
-            </label>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">Full Name</label>
             <div className="relative">
-              <UserIcon className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <UserIcon className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ada Lovelace"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Company / Team Name
-            </label>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">Work Email</label>
             <div className="relative">
-              <Building2 className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                placeholder="Acme Audio Corp (Optional)"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Work Email
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ada@company.com"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition"
+                placeholder="ada@soundforge.ai"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Password (Min 8 chars)
-            </label>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">Organization / Workspace</label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Building2 className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+                placeholder="Lovelace Labs (optional)"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5">Password</label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
                 required
-                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full bg-[#0B0F19] border border-gray-800 rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition"
+                placeholder="At least 8 characters"
+                className="w-full bg-[#08090D] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-text-muted focus:outline-none focus:border-accent-violet transition-colors font-mono"
               />
             </div>
+          </div>
+
+          <div className="pt-1">
+            <label className="flex items-start gap-2 cursor-pointer text-xs text-text-secondary select-none">
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="mt-0.5 rounded bg-[#08090D] border-white/20 text-accent-violet focus:ring-0"
+              />
+              <span>
+                I agree to the <span className="text-white hover:underline">Terms of Service</span> and{' '}
+                <span className="text-white hover:underline">Privacy Policy</span>.
+              </span>
+            </label>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm rounded-lg transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
+            className="btn-primary-gradient w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
           >
             {loading ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Creating workspace...</span>
+              </>
             ) : (
               <>
-                <span>Complete Registration</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Create Developer Account</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-gray-800 text-center">
-          <p className="text-xs text-gray-400">
-            Already have an account?{' '}
-            <Link to="/auth/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition">
-              Sign in
-            </Link>
-          </p>
+        <div className="mt-6 pt-5 border-t border-white/5 text-center text-xs text-text-secondary">
+          Already have an account?{' '}
+          <Link to="/auth/login" className="text-white hover:text-accent-violet font-semibold transition-colors">
+            Sign in
+          </Link>
         </div>
       </div>
     </div>
