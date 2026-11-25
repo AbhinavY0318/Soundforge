@@ -17,19 +17,27 @@ export function getRedisClient(): Redis {
       }
     }
 
-    redisClient = new Redis({
-      host: env.REDIS_HOST,
-      port: env.REDIS_PORT,
-      password: env.REDIS_PASSWORD || undefined,
+    const redisOptions = {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
       lazyConnect: true,
-      retryStrategy: (times) => {
+      retryStrategy: (times: number) => {
         if (process.env.NODE_ENV === 'test') return null; // don't retry in test
         const delay = Math.min(times * 200, 2000);
         return delay;
       },
-    });
+    };
+
+    if (env.REDIS_URL) {
+      redisClient = new Redis(env.REDIS_URL, redisOptions);
+    } else {
+      redisClient = new Redis({
+        host: env.REDIS_HOST,
+        port: env.REDIS_PORT,
+        password: env.REDIS_PASSWORD || undefined,
+        ...redisOptions,
+      });
+    }
 
     redisClient.on('connect', () => {
       logger.info('Connected to Redis server');

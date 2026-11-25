@@ -85,3 +85,12 @@
 - [x] Add Framer Motion transitions, mobile drawer, and accessible modal backdrops
 - [x] Polish developer console: Overview, Generations Studio, API Keys, Usage, Webhooks, Docs, and Settings
 - [x] Verify strict TypeScript compilation and production bundle build (0 errors)
+
+## 11. Simple Low-Cost Deployment & Environment Documentation
+- [x] Create comprehensive `.env.example` at root, backend, and frontend
+- [x] Implement `REDIS_URL` support for Upstash Redis TLS connection
+- [x] Author `ENV_SETUP_GUIDE.md` detailing every environment variable and credential step
+- [x] Author `LOCAL_SETUP.md` for zero-cloud offline Docker development
+- [x] Author `DEPLOYMENT.md` for MongoDB Atlas, Upstash, Cloudflare R2, Render, and Vercel
+- [x] Author `SETUP_CHECKLIST.md` with interactive verification checklist
+- [x] Validate all 26 backend tests and 2 frontend tests pass with 0 errors

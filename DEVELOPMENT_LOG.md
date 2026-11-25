@@ -62,4 +62,16 @@
   - Framer Motion page transitions, responsive mobile drawer, and accessible scale/fade modal dialogs.
   - Developer console pages: Studio with live cost formula previews, API Keys with 24h rotate and one-time reveal, Usage telemetry with Recharts area curves, Webhook delivery inspector, and Quickstart guides.
 - **Tests Executed:** `npm run build --workspace=frontend` (0 errors), `npm run test --workspace=frontend` (2/2 tests passed), backend Vitest suite (26/26 tests passed).
+- **Commit:** `c187e9c feat(ui): transform frontend with premium futuristic AI SaaS design system`
+
+## Milestone 12: Low-Cost Simple Deployment & Environment Architecture
+- **Date:** 2026-11-25
+- **Feature Completed:** Completed beginner-friendly, low-cost cloud deployment architecture and documentation:
+  - Built comprehensive `.env.example` at root, backend, and frontend levels.
+  - Added support for Upstash Redis single connection URL (`REDIS_URL`) and Resend API key (`RESEND_API_KEY`).
+  - Authored `ENV_SETUP_GUIDE.md` detailing every environment variable, purpose, registration steps, key generation, and test verification.
+  - Authored `LOCAL_SETUP.md` with complete offline Docker Compose workflow and local Node instructions (zero cloud dependencies).
+  - Authored `DEPLOYMENT.md` covering MongoDB Atlas (M0 free cluster), Upstash Redis (free TLS), Resend, Cloudflare R2 / S3 audio storage, Render API web service, Render BullMQ background worker, and Vercel React frontend.
+  - Authored `SETUP_CHECKLIST.md` providing step-by-step verification checkboxes for each stage.
+- **Tests Executed:** Backend test suite (26/26 passed), Frontend tests (2/2 passed), TypeScript compilation (0 errors).
 - **Remaining Issues:** None.
