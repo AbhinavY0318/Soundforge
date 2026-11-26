@@ -66,7 +66,11 @@ If you prefer hot-reloading code directly on your host machine while keeping inf
 
 ### Step 1: Start Supporting Infrastructure Only
 ```bash
-docker-compose up -d mongo mongo-init redis minio minio-create-bucket
+# If using MongoDB Atlas, simply start Redis and MinIO:
+docker-compose up -d redis minio
+
+# If running local MongoDB as well:
+docker-compose up -d mongodb redis minio
 ```
 
 ### Step 2: Install Node Dependencies
