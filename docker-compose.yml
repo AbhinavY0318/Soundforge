@@ -39,7 +39,7 @@ services:
 
   # MinIO S3-compatible object storage for audio files
   minio:
-    image: quay.io/minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: soundforge-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -51,28 +51,6 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - soundforge-network
-
-  # MinIO Bucket Auto-creator
-  minio-create-bucket:
-    image: quay.io/minio/mc:latest
-    container_name: soundforge-minio-create-bucket
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb --ignore-existing myminio/soundforge-audio;
-      /usr/bin/mc anonymous set download myminio/soundforge-audio;
-      exit 0;
-      "
     networks:
       - soundforge-network
 
